@@ -47,6 +47,4 @@ public class ReviewController {
         }
         reviewService.postReview(userEmail, reviewRequest);
     }
-
-
 }
