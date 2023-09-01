@@ -1,6 +1,7 @@
 package com.luv2code.springbootlibrary.config;
 
 import com.luv2code.springbootlibrary.entity.Book;
+import com.luv2code.springbootlibrary.entity.Message;
 import com.luv2code.springbootlibrary.entity.Review;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.rest.core.config.RepositoryRestConfiguration;
@@ -30,17 +31,19 @@ public class MyDataRestConfig implements RepositoryRestConfigurer {
         };
 
         /*
-         * Exposer les ID pour les classes afin de savoir précisément de quel livre il est question
+         * Exposer les ID pour les classes afin de savoir précisément de quel livre, review, message il est question
          * dans les requêtes.
          * */
         config.exposeIdsFor(Book.class);
         config.exposeIdsFor(Review.class);
+        config.exposeIdsFor(Message.class);
 
         /*
          * Mise en application de la désactivation des types de requêtes cités plus haut.
          * */
         disableHttpMethods(Book.class, config, theUnsupportedActions);
         disableHttpMethods(Review.class, config, theUnsupportedActions);
+        disableHttpMethods(Message.class, config, theUnsupportedActions);
 
         /*
          * Configure CORS Mapping : https://spring.io/blog/2015/06/08/cors-support-in-spring-framework
