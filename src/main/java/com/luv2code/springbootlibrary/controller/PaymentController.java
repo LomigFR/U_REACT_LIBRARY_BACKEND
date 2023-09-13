@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/payment/secure")
 public class PaymentController {
-
     private PaymentService paymentService;
 
     @Autowired
@@ -46,11 +45,10 @@ public class PaymentController {
             throws Exception {
         String userEmail = ExtractJWT.payloadJWTExtraction(token, "\"sub\"");
 
-        if(userEmail == null){
-            throw new Exception("User email is missing.");
+        if (userEmail == null) {
+            throw new Exception("User email is missing");
         }
 
         return paymentService.stripePayment(userEmail);
     }
-
 }

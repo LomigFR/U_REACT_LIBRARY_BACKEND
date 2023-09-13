@@ -23,24 +23,27 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Guillaume COLLET
  */
+
 @Service
 @Transactional
 public class BookService {
 
     private BookRepository bookRepository;
+
     private CheckoutRepository checkoutRepository;
+
     private HistoryRepository historyRepository;
+
     private PaymentRepository paymentRepository;
 
-    public BookService(BookRepository bookRepository,
-                       CheckoutRepository checkoutRepository,
-                       HistoryRepository historyRepository,
-                       PaymentRepository paymentRepository) {
+    public BookService(BookRepository bookRepository, CheckoutRepository checkoutRepository,
+                       HistoryRepository historyRepository, PaymentRepository paymentRepository) {
         this.bookRepository = bookRepository;
         this.checkoutRepository = checkoutRepository;
         this.historyRepository = historyRepository;
         this.paymentRepository = paymentRepository;
     }
+
 
     public Book checkoutBook(String userEmail, Long bookId) throws Exception {
 
@@ -52,23 +55,23 @@ public class BookService {
         Checkout validateCheckout = checkoutRepository.findByUserEmailAndBookId(userEmail, bookId);
 
         if (!book.isPresent() || validateCheckout != null || book.get().getCopiesAvailable() <= 0) {
-            throw new Exception("Book doesn't exist or already checked out by user.");
+            throw new Exception("Book doesn't exist or already checked out by user");
         }
 
-        /**
+        /*********************************************************************************************
          * The idea here, is to block the possibility of further borrowing
          * if the user has not returned the books on time, and therefore owes money as a penalty
          * for late return.
          */
         List<Checkout> currentBooksCheckedOut = checkoutRepository.findBooksByUserEmail(userEmail);
 
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
         boolean bookNeedsReturned = false;
 
         for (Checkout checkout : currentBooksCheckedOut) {
-            Date d1 = simpleDateFormat.parse(checkout.getReturnDate());
-            Date d2 = simpleDateFormat.parse(LocalDate.now().toString());
+            Date d1 = sdf.parse(checkout.getReturnDate());
+            Date d2 = sdf.parse(LocalDate.now().toString());
 
             TimeUnit time = TimeUnit.DAYS;
 
@@ -92,6 +95,9 @@ public class BookService {
             payment.setUserEmail(userEmail);
             paymentRepository.save(payment);
         }
+        /**
+         * End of the block.
+         *********************************************************************************************/
 
         book.get().setCopiesAvailable(book.get().getCopiesAvailable() - 1);
         bookRepository.save(book.get());
@@ -123,7 +129,9 @@ public class BookService {
     }
 
     public List<ShelfCurrentLoansResponse> currentLoans(String userEmail) throws Exception {
+
         List<ShelfCurrentLoansResponse> shelfCurrentLoansResponses = new ArrayList<>();
+
         List<Checkout> checkoutList = checkoutRepository.findBooksByUserEmail(userEmail);
         List<Long> bookIdList = new ArrayList<>();
 
@@ -133,19 +141,21 @@ public class BookService {
 
         List<Book> books = bookRepository.findBooksByBookIds(bookIdList);
 
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
         for (Book book : books) {
-            Optional<Checkout> checkout = checkoutList.stream().filter(x -> x.getBookId() == book.getId()).findFirst();
+            Optional<Checkout> checkout = checkoutList.stream()
+                    .filter(x -> x.getBookId() == book.getId()).findFirst();
 
             if (checkout.isPresent()) {
-                Date d1 = simpleDateFormat.parse(checkout.get().getReturnDate());
-                Date d2 = simpleDateFormat.parse(LocalDate.now().toString()
-                );
+
+                Date d1 = sdf.parse(checkout.get().getReturnDate());
+                Date d2 = sdf.parse(LocalDate.now().toString());
 
                 TimeUnit time = TimeUnit.DAYS;
 
-                long difference_In_Time = time.convert(d1.getTime() - d2.getTime(), TimeUnit.MILLISECONDS);
+                long difference_In_Time = time.convert(d1.getTime() - d2.getTime(),
+                        TimeUnit.MILLISECONDS);
 
                 shelfCurrentLoansResponses.add(new ShelfCurrentLoansResponse(book, (int) difference_In_Time));
             }
@@ -154,24 +164,27 @@ public class BookService {
     }
 
     public void returnBook(String userEmail, Long bookId) throws Exception {
+
         Optional<Book> book = bookRepository.findById(bookId);
+
         Checkout validateCheckout = checkoutRepository.findByUserEmailAndBookId(userEmail, bookId);
 
         if (!book.isPresent() || validateCheckout == null) {
-            throw new Exception("Book does not exist or not checked out by user.");
+            throw new Exception("Book does not exist or not checked out by user");
         }
 
         book.get().setCopiesAvailable(book.get().getCopiesAvailable() + 1);
 
         bookRepository.save(book.get());
 
-        /**
+        /********************************************************************************
          * The idea here, is to block the possibility of returning a late book
          * if a sum is owed for late delivery penalties.
          * */
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        Date d1 = simpleDateFormat.parse(validateCheckout.getReturnDate());
-        Date d2 = simpleDateFormat.parse(LocalDate.now().toString());
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+
+        Date d1 = sdf.parse(validateCheckout.getReturnDate());
+        Date d2 = sdf.parse(LocalDate.now().toString());
 
         TimeUnit time = TimeUnit.DAYS;
 
@@ -179,6 +192,7 @@ public class BookService {
 
         if (differenceInTime < 0) {
             Payment payment = paymentRepository.findByUserEmail(userEmail);
+
             payment.setAmount(payment.getAmount() + (differenceInTime * -1));
             paymentRepository.save(payment);
         }
